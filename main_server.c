@@ -7,4 +7,6 @@ int main() {
         mySend(sock, i);
 	}
 	close(sock);
+
+    
 }
