@@ -1,35 +1,20 @@
-#include <unistd.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <pthread>
+#include "connection.h"
 
-#include "client.h"
-#include "server.h"
-
-#define PORT 1234
-
-void CreateNewClient();
-void openServer();
-void closeServer();
-void send();
-void receive();
-
-int CreateNewClient() {
-	char ipAddress[16];
-	int port;
-	pthread_t tid:
+int CreateNewClient(char* ip, int port) {
+	printf("%s, %d, ", ip, port);
+	info_client info; 
+	info.ip = (char*)malloc(sizeof(ip));
+	strcpy(info.ip, ip);
+	info.port = port;
+	return openClient(&info);
+}
+int openSerialServer(int port) {
+	pthread_t tid;
 	int err;
-	
-	printf("Please enter ip address and port: ");
-	scanf("%s", ipAddress);
-	scanf("%d", &port);
-	printf("%s, %d, ", ipAddress, &port);
-	void* args[] = {&tid, &ipAddress, &port};
-	err = pthread_creat(&tid, NULL, openClient, *args);
+	info_server info;
+	info.port = port;
+
+	err = pthread_create(&tid, NULL, openServer, &info);
 	if(err != 0)
 	{
 		printf("error with creating thread\n");
@@ -37,15 +22,23 @@ int CreateNewClient() {
 	}
 	return tid;
 }
-int openServer() {
-	pthread_t tid;
-	void* args[] = {&tid, &PORT};
-	pthread_creat(&tid, NULL, openServer, args);
-	return tid;
+void mySend(int sock, int number){
+	if(write(sock, &number, sizeof(int)) < 0)
+	{
+		printf("Error with writing");
+		close(sock);
+		exit(1);
+	}
+	sleep(1);
+	printf("%d has written %d to socket.\n", sock, number);
 }
-void closeServer(int tid) {
-	
+void receive(int sock) {
+	int value;
+	if(read(sock, &value, 4) < 0)
+	{
+		printf("Error with reading");
+		close(sock);
+		exit(1);
+	}
+	printf("%d has received %d from socket.\n", sock, value);
 }
-void send();
-void receive();
-
