@@ -9,5 +9,8 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #endif
-
+struct info_sockh{
+    pthread_t tid;
+    int connect_sock;
+}typedef info_sockh;
 void* handleClient(void* args);

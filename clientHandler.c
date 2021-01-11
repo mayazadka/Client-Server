@@ -3,7 +3,7 @@
 void* handleClient(void* args)
 {
     int number;
-	info_sock* info = args;
+	info_sockh* info = args;
 	while(1)
 	{
 		printf("Please enter a number: ");
@@ -14,4 +14,5 @@ void* handleClient(void* args)
 			break;
 		printf("Server has written %d to socket.\n",number);
 	}
+	return 0;
 }

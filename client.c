@@ -1,11 +1,14 @@
 #include "client.h"
-
+//
+//
+//
 int openClient(void* args)
 {
 	int sock;
 	struct sockaddr_in client_name;
+	info_client* info = args;
 	
-	printf("Client is alive and establishing socket connection. \n");
+	
 	sock = socket(AF_INET,SOCK_STREAM,0);
 	if(sock < 0)
 	{
@@ -13,7 +16,7 @@ int openClient(void* args)
 		close(sock);
 		exit(1);
 	}
-	info_client* info = args;
+	printf("Client is alive and establishing socket connection. \n");
 	bzero(&client_name,sizeof(client_name));
 	client_name.sin_family = AF_INET;
 	client_name.sin_addr.s_addr = inet_addr(info->ip);
@@ -28,6 +31,9 @@ int openClient(void* args)
 	printf("Connected to server.\n");
 	return sock;
 }
+//
+//
+//
 void closeClient(int sock) {
 	printf("Closing client %d channel\n", sock);
 	close(sock);

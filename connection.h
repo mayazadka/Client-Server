@@ -15,7 +15,7 @@
 #include "server.h"
 
 
-#define PORT 1234
+#define PORT 2000
 #define IP "127.0.0.1"
 
 int CreateNewClient(char* ip, int port);
