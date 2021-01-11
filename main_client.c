@@ -1,11 +1,8 @@
-#include "connection.h"
+#include "client.h"
 
 int main(){
-	int sock = CreateNewClient(IP, PORT);
-	
-	//for(int i=0;i<10;i++){
-		mySend(sock, 26);
-		receive(sock);
-	//}
-	close(sock);
+	int sock = openClient(IP, PORTC);
+	char* buf = malloc(100);
+	read(sock, buf, 8);
+	printf(buf);
 }

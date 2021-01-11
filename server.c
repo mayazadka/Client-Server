@@ -1,23 +1,25 @@
+#include "clientHandler.h"
 #include "server.h"
 int stop = 0;
 
-//---------------------------------------
-//closes and relases the soceket that was opwn for a sesipic client
-//-------------------------------------
+// ------------------------------------------------------------------
+// closes and relases the soceket that was opwn for a sesipic client
+// ------------------------------------------------------------------
 void clean_up(int cond, int *sock)
 {
 	printf("Exiting now.\n");
 	close(*sock);
 	exit(cond);
 }
+// ---------------------------------------------------------------------------------
+// opening a new server and running it in a seperted thread( using runServer method)
+// ---------------------------------------------------------------------------------
 
-void* openServer(void* args)
+void* openServer(int port)
 {
 	pthread_t tid;
 	int* sock = malloc(sizeof(int));
 	struct sockaddr_in server_name;
-	int* connect_sock = (int*)malloc(MAX_CLIENTS * sizeof(int));
-	info_server* info = args;
 	info_runServer* data = malloc(sizeof(info_runServer));
 	
 	*sock = socket(AF_INET,SOCK_STREAM,0);
@@ -30,7 +32,7 @@ void* openServer(void* args)
 	bzero(&server_name,sizeof(server_name));//
 	server_name.sin_family = AF_INET;
 	server_name.sin_addr.s_addr = htonl(INADDR_ANY);
-	server_name.sin_port = htons(info->port);
+	server_name.sin_port = htons(port);
 	
 	if(bind(*sock, (struct sockaddr *)&server_name, sizeof(server_name)) < 0)
 	{
@@ -38,34 +40,29 @@ void* openServer(void* args)
 		clean_up(1,sock);
 	}
 	
-	printf("Server is alive and waiting for socket connection from client.\n");
+	printf("Server is alive and waiting for socket connection from client %d.\n" , *sock);
 	
-	if(listen(*sock,MAX_CLIENTS) < 0){printf("exit from listen\n"); return -1;}
+	if(listen(*sock,MAX_CLIENTS) < 0){printf("exit from listen\n"); return NULL;}
 	data->sock = *sock;
-	data->connect_sock = connect_sock;
 	data->server_name = &server_name;	
 	pthread_create(&tid, NULL, runServer, data);
 	pthread_join(tid ,NULL);
 	return sock;
 }
-//
-//
-//
+
+// --------------------------------------------------------------------------
+// listing until told to stop , any time we accept a new client we handle him,
+// i a new thread (via clientHandel method)
+// --------------------------------------------------------------------------
 void* runServer(void* args)
 {
 	int i = 0;
-	printf("bf tid\n");
 	pthread_t tid;
-	printf("bf data = args\n");
 	info_runServer* data = args;
-	printf("bf len = sizeOf\n");
 	socklen_t len = sizeof(data->server_name);
-	printf("bf infp = malloc\n");
 	info_sock* info = malloc(sizeof(info_sock));
-	printf("starts run\n");
-	for(int j = 0 ; j < 10 ; j++)
+	while(!stop)
 	{
-		printf("in while\n");
 		data->connect_sock = malloc(len * sizeof(int));
 		data->connect_sock[i] = accept(data->sock, (struct sockaddr *)&data->server_name,&len);
 		info->connect_sock = data->connect_sock[i];

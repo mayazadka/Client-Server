@@ -1,7 +1,7 @@
-#include "connection.h"
+#include"server.h"
 
 int main() {
-    int sock = openSerialServer(PORT);
-	close(sock);
-    //maya
+    int* sock = openServer(PORTS);
+	sleep(10);
+    close(*sock);
 }

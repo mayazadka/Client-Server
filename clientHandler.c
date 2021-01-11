@@ -1,18 +1,13 @@
 #include "clientHandler.h"
-
+// ----------------------------------------------------------------------------------------------------------------------
+// this method is responsibal for handeling with one client. (it is run throw the new socket that is opend for each client) 
+// ----------------------------------------------------------------------------------------------------------------------
 void* handleClient(void* args)
 {
-    int number;
+	char* buf = malloc(100);
 	info_sockh* info = args;
-	while(1)
-	{
-		printf("Please enter a number: ");
-		scanf("%d", &number);
-		write(info->connect_sock, &number, 4);
-		sleep(1);
-		if(number == -1)
-			break;
-		printf("Server has written %d to socket.\n",number);
-	}
+	printf("connected to a client throw sock : %d\n" , info->connect_sock);
+	write(info->connect_sock , "hello\n" ,7);
+	read(info->connect_sock , buf ,100);
 	return 0;
 }

@@ -12,17 +12,15 @@
 #include <pthread.h>
 #endif
 #define MAX_CLIENTS 5
-#include "clientHandler.h"
-
-struct info_server{
-    pthread_t tid;
-    int port;
-}typedef info_server;
+#define PORTS 2001
+#define IP "127.0.0.1"
 
 struct info_sock{
     pthread_t tid;
     int connect_sock;
 }typedef info_sock;
+
+
 
 struct info_runServer{
 	pthread_t tid;
@@ -32,5 +30,9 @@ struct info_runServer{
 }typedef info_runServer;
 void* runServer(void* args);
 void clean_up(int cond, int *sock);
-void* openServer(void* args);
+void* openServer(int port);
 void stopServer();
+
+
+
+
