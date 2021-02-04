@@ -1,3 +1,7 @@
+#include <mysql.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "clientHandler.h"
 #include "server.h"
 int stop = 0;
@@ -77,4 +81,60 @@ void* runServer(void* args)
 void stopServer()
 {
 	stop = 1;
+}
+int connectionWithMySQLServer()
+{
+	MYSQL *con = mysql_init(NULL);
+	if (con == NULL)
+	{
+		puts(mysql_error(con));
+		return 1;
+	}
+	if(mysql_real_connect(con, "127.0.0.1", "root", "529123",  "ottomate", 0, NULL, 0) == NULL)
+	{
+		puts(mysql_error(con));
+		mysql_close(con);
+		return 1;
+	}
+	//"INSERT INTO car (car_id, manufacturing_year, model) VALUES('123456',2020,'JAGUAR F-PACE');"
+	
+	mysql_close(con);
+	return 0;
+}
+void UpdateDB(MYSQL *con, char* query)
+{
+	if(mysql_query(con, query))
+	{
+		puts(mysql_error(con));
+		mysql_close(con);
+		return 1;
+	}
+}
+void GetFromDB(MYSQL *con)
+{
+	if(mysql_query(con, "SELECT * FROM car"))
+	{
+		puts(mysql_error(con));
+		mysql_close(con);
+		return 1;
+	}
+	MYSQL_RES *result =  mysql_store_result(con);
+	if(result == NULL)
+	{
+		puts(mysql_error(con));
+		mysql_close(con);
+		return 1;
+	}
+	int num_fields = mysql_num_fields(result);
+	MYSQL_ROW row;
+	while((row = mysql_fetch_row(result)))
+	{
+		for(int i = 0; i < num_fields; i++)
+		{
+		printf("%s ", row[i]?row[i]:"NULL");
+		}
+		printf("\n");
+	}
+
+	mysql_free_result(result);
 }
