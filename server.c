@@ -82,25 +82,7 @@ void stopServer()
 {
 	stop = 1;
 }
-int connectionWithMySQLServer()
-{
-	MYSQL *con = mysql_init(NULL);
-	if (con == NULL)
-	{
-		puts(mysql_error(con));
-		return 1;
-	}
-	if(mysql_real_connect(con, "127.0.0.1", "root", "529123",  "ottomate", 0, NULL, 0) == NULL)
-	{
-		puts(mysql_error(con));
-		mysql_close(con);
-		return 1;
-	}
-	//"INSERT INTO car (car_id, manufacturing_year, model) VALUES('123456',2020,'JAGUAR F-PACE');"
-	
-	mysql_close(con);
-	return 0;
-}
+
 void UpdateDB(MYSQL *con, char* query)
 {
 	if(mysql_query(con, query))
