@@ -123,16 +123,110 @@ void handleOBDclient(MYSQL * con, int client, char* car_id, char* customer_id)
 		}
 		freeStrings(argumants);
 	}
-	//update end_time
+	
+	// query: create new drive
+	query = appendStrings(3, "UPDATE drive SET end_time = NOW() WHERE drive_id = '", drive_id, "';");
+	queryAndResponse(0, con, query);
+	free(query);
 
 	free(customer_car_id);
 	free(drive_id);
 }
 
-void handleAlgorithm(MYSQL * con, int client, char* password)
+void handleAlgorithm(MYSQL * con, int client, char* drive_id, char* password)
 {
-	write(client, "cant handle algorithm", 21);
-	return;
+	char* query;
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+	Strings argumants;
+	int n;
+	char buf[1000];
+
+	// check the password
+	if(strcmp(password, "qwerty") != 0)
+	{
+		return;
+	}
+
+	write(client, "ok", 2);
+	
+	// query: check if the drive_id is existing
+	query = appendStrings(3, "SELECT COUNT(drive_id) FROM drive WHERE drive_id = '", drive_id, "';");
+	result = queryAndResponse(1, con, query);
+	free(query);
+	if(result == NULL)
+	{
+		write(client, "error with query or get result", 30);
+		return;
+	}
+	row = mysql_fetch_row(result);
+	if(strcmp(row[0], "0") == 0)
+	{
+		mysql_free_result(result);
+		return;
+	}
+	mysql_free_result(result);
+
+	while(1)
+	{
+		n = read(client, buf, 1000);
+		buf[n] = '\0';
+		argumants = split(buf);
+		if(argumants.size == 0)
+		{
+			write(client, "must send get command", 21);
+		}
+		else if(strcmp(argumants.strings[0], "quit") == 0)
+		{
+			freeStrings(argumants);
+  			break;
+		}
+		else if(strcmp(argumants.strings[0], "get") == 0)
+		{
+			if(argumants.size < 2)
+			{
+				write(client, "USE: get [argument] [...]", 31);
+			}
+			else
+			{
+				if(strcmp(argumants.strings[1], "speed") == 0 || strcmp(argumants.strings[1], "engine_speed") == 0 || strcmp(argumants.strings[1], "throtle") == 0 || strcmp(argumants.strings[1], "engine_load") == 0 || strcmp(argumants.strings[1], "fuel") == 0 || strcmp(argumants.strings[1], "air_temperature") == 0)
+				{
+					if(argumants.size != 3 || (strcmp(argumants.strings[2], "MIN") != 0 && strcmp(argumants.strings[2], "MAX") != 0 && strcmp(argumants.strings[2], "AVG") != 0))
+					{
+						write(client,  "USE: get [paramater name] [MIN/MAX/AVG]", 39);
+					}
+					else
+					{
+						query = appendStrings(7,
+						"SELECT ",argumants.strings[2],"(",argumants.strings[1],") \
+						FROM drive_characteristics \
+						WHERE drive_id = '", drive_id, "';");
+						result = queryAndResponse(1, con, query);
+						free(query);
+						if(result == NULL)
+						{
+							write(client, "error with query or get result", 30);	
+						}
+						else
+						{
+							row = mysql_fetch_row(result);
+							write(client, row[0], strlen(row[0]));
+							mysql_free_result(result);
+						}
+					}
+				}
+				else
+				{
+					write(client,  "no such argument for get", 24);
+				}
+			}
+		}
+		else
+		{
+			write(client, "must send get command", 21);
+		}
+		freeStrings(argumants);
+	}
 }
 
 void* handleClient(void* args)
@@ -167,9 +261,9 @@ void* handleClient(void* args)
 		{
 			handleOBDclient(con, info->connect_sock, argumants.strings[1], argumants.strings[2]);
 		}
-		else if (strcmp(argumants.strings[0], "algo") == 0 && argumants.size == 2)
+		else if (strcmp(argumants.strings[0], "algo") == 0 && argumants.size == 3)
 		{
-			handleAlgorithm(con, info->connect_sock, argumants.strings[1]);
+			handleAlgorithm(con, info->connect_sock, argumants.strings[1], argumants.strings[2]);
 		}
 	}
 	

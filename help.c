@@ -224,6 +224,7 @@ int stringToInt(char* string, int *number)
 
         *number += string[i]-'0';
         *number *= 10;
+        i++;
     }
     *number/=10;
 
