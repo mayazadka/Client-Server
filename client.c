@@ -1,22 +1,27 @@
+#include "client.h"
 
-#include "client.h" 
-// ---------------------------------------------------------------------------------------------------------
-// creats a new client that tries to connect to our server (this method us neccery for testing purposes only)
-// ---------------------------------------------------------------------------------------------------------
+// --------------------------------------------
+// closes and relases the soceket that was open
+// --------------------------------------------
+void clean_up(int cond, int sock)
+{
+	close(sock);
+	exit(cond);
+}
+
+// -------------------------------------------------------
+// creating a new client that tries to connect to our server
+// -------------------------------------------------------
 int openClient(char* ip, int port)
 {
 	int sock;
 	struct sockaddr_in client_name;
 	
-	
 	sock = socket(AF_INET,SOCK_STREAM,0);
 	if(sock < 0)
 	{
-		printf("Error opening channel\n");
-		close(sock);
 		exit(1);
 	}
-	printf("Client is alive and establishing socket connection. \n");
 	bzero(&client_name,sizeof(client_name));
 	client_name.sin_family = AF_INET;
 	client_name.sin_addr.s_addr = inet_addr(ip);
@@ -24,15 +29,15 @@ int openClient(char* ip, int port)
 	
 	if(connect(sock, (struct sockaddr *)&client_name, sizeof(client_name)) < 0)
 	{
-		printf("Error establishing communications\n");
-		close(sock);
-		exit(1);
+		clean_up(2, sock);
 	}
-	printf("Connected to server.\n");
-	return sock;// needs to be recv(sock)
+	
+	return sock;
 }
+
+// -------------------
+// closing the client
+// -------------------
 void closeClient(int sock) {
-	printf("Closing client %d channel\n", sock);
 	close(sock);
-	exit(0);
 }
