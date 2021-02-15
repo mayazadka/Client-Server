@@ -1,26 +1,24 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
-typedef struct list
-{
-    int size;
-    node* head;
-    node* tail; 
-}list;
 
-typedef struct node
+typedef struct Node
 {
     int value;
-    node* next;
-    node* prev;
-}node;
+    struct Node *next;
+}Node;
 
-//
-#define emptyList 1
-//
-list newList();
-list initialNewList(int** initialList ,int size);
-void add(list* list , int value);
-int take(list* list , int* value);
-int takeLast(list* list , int* value);
-bool contains(list* list,int value);
+typedef struct List
+{
+    int size;
+    Node* head;
+    Node* tail; 
+}List;
+
+Node* newNode(int value, Node* next);
+List* newList();
+List* initialNewList(int size);
+void addLast(List* list , int value);
+int takeFirst(List* list , int* value);
+int contains(List* list,int value);
+void freeList(List* list);
+void freeNodes(Node* node);

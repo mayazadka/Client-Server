@@ -4,6 +4,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include "help.h"
+#include "list.h"
 #ifdef __linux__            // UNIX/Linux
 #include <netinet/in.h>
 #include <mysql.h>
@@ -13,10 +14,13 @@
 #include <pthread.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
 #endif
 struct info_sockh{
     pthread_t tid;
     int connect_sock;
+    List* available;
+	int place;
 }typedef info_sockh;
 void* handleClient(void* args);
 MYSQL_RES * queryAndResponse(int isResult, MYSQL *con, char* query);

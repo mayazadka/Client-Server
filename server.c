@@ -1,5 +1,4 @@
 #include "server.h"
-#include "list.h"
 
 int stop = 0;
 
@@ -61,31 +60,41 @@ int openServer(int port)
 // -------------------------------------------------------------------------------
 void* runServer(void* args)
 {
-	list available_spots = initialNewList({0,1,2,3,4,5});
-	int* available;
 	pthread_t tid;
 	info_runServer* data = args;
 	socklen_t len = sizeof(data->server_name);
 	info_sock info;
+	int place;
+
+	data->available = initialNewList(MAX_CLIENTS);
 	while(!stop)
 	{
-		take(initialNewList , available);
 		if(data->connect_sock == NULL)
 		{
 			clean_up(5, data->sock);
 		}
-		data->connect_sock[available] = accept(data->sock, (struct sockaddr *)&data->server_name,&len);
-		if(data->connect_sock[available]<0)
+		if(takeFirst(data->available, &place) == 0)
 		{
-			add(*available);
+			continue;
+		}
+		data->connect_sock[place] = accept(data->sock, (struct sockaddr *)&data->server_name,&len); // connect as fiction client
+		if(data->connect_sock[place]<0)
+		{
 			break;
 		}
-		info.connect_sock = data->connect_sock[available];
+		info.connect_sock = data->connect_sock[place];
+		info.available = data->available;
+		info.place = place;
 		pthread_create(&tid, NULL, handleClient, &info);
 	}
+
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
-		close(data->connect_sock[i]);
+		if(contains(data->available, i) != 1)
+		{
+			write(data->connect_sock[i], "bye", 3);
+			close(data->connect_sock[i]);
+		}
 	}
 
 	close(data->sock);

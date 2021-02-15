@@ -22,12 +22,15 @@
 struct info_sock{
     pthread_t tid;
     int connect_sock;
+	List* available;
+	int place;
 }typedef info_sock;
 
 struct info_runServer{
 	pthread_t tid;
 	int sock;
 	int connect_sock[MAX_CLIENTS];
+	List* available;
 	struct sockaddr_in server_name;
 }typedef info_runServer;
 

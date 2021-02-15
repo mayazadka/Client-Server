@@ -1,54 +1,103 @@
 #include "list.h"
 
-list newList()
+Node* newNode(int value, Node* next)
 {
-    list list;
-    list.head = NULL;
-    list.tail = NULL;
-    list.size=0;
-}
-list initialNewList(int** initialList ,int size)
-{
-    int i;
-    list list;
-    for(i = 0 ; i < size ; i++){add(&list , initialList[i]);}
+    Node* node = (Node*)malloc(sizeof(Node));
+    if(node == NULL) {return NULL;}
+
+    node->next = next;
+    node->value = value;
+
+    return node;
 }
 
-void add(list* list , int value)
+List* newList()
 {
-    node node;
-    node.value = value;
-    node.prev = list->tail;
-    node.next = NULL;
-    list->tail->next = &node;
-    list->tail = &node;
-    if(list->size == 0){list->head = &node;}
+    List* list = (List*)malloc(sizeof(List));
+    if(list == NULL) {return NULL;}
+
+    list->head = NULL;
+    list->tail = NULL;
+    list->size=0;
+
+    return list;
+}
+
+List* initialNewList(int size)
+{
+    List* list = newList();
+
+    int i;
+    for(i = 0 ; i < size ; i++)
+    {
+        addLast(list ,i);
+    }
+
+    return list;
+}
+
+void addLast(List* list , int value)
+{
+    if(list->size == 0)
+    {
+        list->head = newNode(value, NULL);
+        list->tail = list->head;
+    }
+    else
+    {
+        Node* node = newNode(value, NULL);
+        list->tail->next = node;
+        list->tail = node;
+    }
+    
     list->size++;
 }
-int take(list* list , int* value)
+
+int takeFirst(List* list , int* value)
 {
-    if(list->size == 0) return emptyList;
+    if(list->size == 0) {return 0;}
+
     *value = list->head->value;
-    //delete head
+    
+    Node* node =list->head;
     list->head = list->head->next;
-    list->head->prev = NULL;
+    free(node);
+
+    if(list->size == 0)
+    {
+        list->head = NULL;
+        list->tail = NULL;
+    }
+
+    return 1;
+}
+
+int contains(List* list,int value)
+{
+    Node* node = list->head;
+    while(node!= NULL)
+    {
+        if(node->value == value) {return 1;}
+        node = node->next;
+    }
     return 0;
 }
-int takeLast(list* list , int* value)
+
+void freeList(List* list)
 {
-    if(list->size == 0)return emptyList;
-    *value = list->tail->value;
-    //delete head
-    list->tail = list->tail->prev;
-    list->tail->next = NULL;
+    freeNodes(list->head);
+    free(list);
 }
-bool contains(list* list,int value)
+
+void freeNodes(Node* node)
 {
-    node* node = list->head;
-    if(node == NULL) return false;
-    while((node = node->next) != NULL)
+    if(node->next == NULL)
     {
-         if (node->value == value) {return true;}
+        free(node);
     }
-    return false;
+    else
+    {
+        freeNodes(node->next);
+        free(node);
+    }
 }

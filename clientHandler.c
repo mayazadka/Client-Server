@@ -272,6 +272,8 @@ void* handleClient(void* args)
 	close(info->connect_sock);
 	mysql_close(con);
 	freeStrings(argumants);
+
+	addLast(info->available, info->place);
 	return NULL;
 }
 
