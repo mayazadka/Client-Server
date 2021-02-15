@@ -7,19 +7,29 @@ int main(int argc, char** argv){
 	int n;
 
 	sock = openClient(IP, PORTC);
-	do {
+	while(1)
+	{
         puts("enter command:");
         printf("> ");
         gets(bufInput);
 		write(sock, bufInput, strlen(bufInput));
 		if(strcmp(bufInput, "quit") == 0)
+		{
+			n = read(sock, bufOutput, 100);
+			bufOutput[n] = '\0';
+			puts(bufOutput);
+			puts("");
 			break;
+		}
 		n = read(sock, bufOutput, 100);
 		bufOutput[n] = '\0';
 		puts(bufOutput);
         puts("");
-		if(strcmp(bufOutput, "error") == 0)
+		if(strncmp(bufOutput, "error", 5) == 0)
 			break;
-    }while(strcmp(bufInput, "quit")!=0);
+		else if(strcmp(bufOutput, "bye") == 0)
+			break;
+    }
 	closeClient(sock);
+	return 0;
 }
