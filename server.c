@@ -67,6 +67,7 @@ void* runServer(void* args)
 	int place;
 
 	data->available = initialNewList(MAX_CLIENTS);
+	stop = 0;
 	while(!stop)
 	{
 		if(data->connect_sock == NULL)
@@ -77,7 +78,7 @@ void* runServer(void* args)
 		{
 			continue;
 		}
-		data->connect_sock[place] = accept(data->sock, (struct sockaddr *)&data->server_name,&len); // connect as fiction client
+		data->connect_sock[place] = accept(data->sock, (struct sockaddr *)&data->server_name,&len);
 		if(data->connect_sock[place]<0)
 		{
 			break;
@@ -90,14 +91,13 @@ void* runServer(void* args)
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
-		if(contains(data->available, i) != 1)
+		if(contains(data->available, i) != 1 && data->connect_sock[i] != -1)
 		{
 			write(data->connect_sock[i], "bye", 3);
 			close(data->connect_sock[i]);
 		}
 	}
 
-	close(data->sock);
 	free(data);
 	return NULL;
 }
@@ -108,5 +108,6 @@ void* runServer(void* args)
 void closeServer(int sock)
 {
 	stop = 1;
-	close(sock);
+	shutdown(sock, SHUT_RDWR);
+	//close(sock);
 }
