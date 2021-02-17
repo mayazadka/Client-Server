@@ -267,6 +267,7 @@ void* handleClient(void* args)
 		}
 	}
 	
+	puts("info->connect_sock");
 	write(info->connect_sock, "bye", 3);
 
 	close(info->connect_sock);

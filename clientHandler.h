@@ -3,7 +3,7 @@
 #include <string.h>
 #include <signal.h>
 #include <stdlib.h>
-#include "help.h"
+#include "help/help.h"
 #include "list.h"
 #ifdef __linux__            // UNIX/Linux
 #include <netinet/in.h>
