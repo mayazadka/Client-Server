@@ -14,7 +14,10 @@ void handleOBDclient(MYSQL * con, int client, char* car_id, char* customer_id)
 	int n;
 	char buf[1000];
 
-	//needs validation to car_id, customer_id
+	if(!onlyLettersAndNumbers(car_id) || !onlyNumbers(customer_id))
+	{
+		return;
+	}
 
 	// query: check if the combination of car_id and customer_id is existing
 	query = appendStrings(5, "SELECT COUNT(car_id) FROM customer_car WHERE car_id = '", car_id, "' AND customer_id = '", customer_id, "';");
@@ -71,7 +74,7 @@ void handleOBDclient(MYSQL * con, int client, char* car_id, char* customer_id)
 		return;
 	}
 	row = mysql_fetch_row(result);
-	drive_id = (char*)malloc(sizeof(char) * (strlen(row[0]) +1)); // add 1 for '\0'
+	drive_id = (char*)malloc(sizeof(char) * (strlen(row[0]) +1));
 	if(drive_id == NULL)
 	{
 		write(client, "error with allocation", 21); 
@@ -124,7 +127,7 @@ void handleOBDclient(MYSQL * con, int client, char* car_id, char* customer_id)
 		freeStrings(argumants);
 	}
 	
-	// query: create new drive
+	// query: update end time
 	query = appendStrings(3, "UPDATE drive SET end_time = NOW() WHERE drive_id = '", drive_id, "';");
 	queryAndResponse(0, con, query);
 	free(query);
@@ -150,6 +153,12 @@ void handleAlgorithm(MYSQL * con, int client, char* drive_id, char* password)
 
 	write(client, "ok", 2);
 	
+	
+	if(!onlyNumbers(drive_id))
+	{
+		return;
+	}
+
 	// query: check if the drive_id is existing
 	query = appendStrings(3, "SELECT COUNT(drive_id) FROM drive WHERE drive_id = '", drive_id, "';");
 	result = queryAndResponse(1, con, query);
@@ -229,6 +238,249 @@ void handleAlgorithm(MYSQL * con, int client, char* drive_id, char* password)
 	}
 }
 
+void handleManager(MYSQL * con, int client, char* username, char* passwrod)
+{
+	char* query;
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+	Strings argumants;
+	int n;
+	char buf[1000];
+	
+	if(!onlyLettersAndNumbers(username))
+	{
+		return;
+	}
+
+	// query: check if the manager and password are correct
+	query = appendStrings(5, "SELECT COUNT(username) FROM manager WHERE username = '", username, "' AND password = '",passwrod,"';");
+	result = queryAndResponse(1, con, query);
+	free(query);
+	if(result == NULL)
+	{
+		write(client, "error with query or get result", 30);
+		return;
+	}
+	row = mysql_fetch_row(result);
+	if(strcmp(row[0], "0") == 0)
+	{
+		mysql_free_result(result);
+		return;
+	}
+	mysql_free_result(result);
+
+	write(client, "ok", 2);
+
+	while(1)
+	{
+		n = read(client, buf, 1000);
+		buf[n] = '\0';
+		argumants = split(buf);
+		if(argumants.size == 0)
+		{
+			write(client, "must send add_customer/add_car/combine command", 46);
+		}
+		else if(strcmp(argumants.strings[0], "quit") == 0)
+		{
+			freeStrings(argumants);
+  			break;
+		}
+		else if(strcmp(argumants.strings[0], "add_customer") == 0)
+		{
+			if(argumants.size != 11)
+			{
+				write(client, "USE: add_customer [customer_id] [first name] [last name] [age] [country] [city] [street] [home number] [phone number] [e-mail]", 126);
+			}
+			else
+			{
+				if(!onlyNumbers(argumants.strings[1]) || !onlyLetters(argumants.strings[2]) || !onlyLetters(argumants.strings[3]) || !onlyNumbers(argumants.strings[4]) ||
+				!onlyLetters(argumants.strings[5]) || !onlyLetters(argumants.strings[6]) || !onlyLetters(argumants.strings[7]) || !onlyNumbers(argumants.strings[8]) ||
+				!onlyNumbers(argumants.strings[9]) || !emailPattern(argumants.strings[10]))
+				{
+					write(client, "invalid input", 13);
+				}
+				else
+				{
+					// query: check if the customer_id is existing
+					query = appendStrings(3, "SELECT COUNT(customer_id) FROM customer WHERE customer_id = '", argumants.strings[1], "';");
+					result = queryAndResponse(1, con, query);
+					free(query);
+					if(result == NULL)
+					{
+						write(client, "error with query or get result", 30);
+						return;
+					}
+					row = mysql_fetch_row(result);
+					if(strcmp(row[0], "0") != 0)
+					{
+						write(client, "customer id allready exist", 26);
+						mysql_free_result(result);
+					}
+					else
+					{
+						mysql_free_result(result);
+
+						// query: add customer to db
+						query = appendStrings(21,"INSERT INTO customer (customer_id, first_name, last_name, age, country, city, street, home_number, phone_number, email) VALUES( \
+												'",argumants.strings[1],"',\
+												'",argumants.strings[2],"',\
+												'",argumants.strings[3],"',\
+												",argumants.strings[4],",\
+												'",argumants.strings[5],"',\
+												'",argumants.strings[6],"',\
+												'",argumants.strings[7],"',\
+												",argumants.strings[8],",\
+												'",argumants.strings[9],"',\
+												'",argumants.strings[10],"');"); 
+						queryAndResponse(0, con, query);
+						free(query);
+
+						write(client, "ok", 2);
+					}
+				}
+			}
+		}
+		else if(strcmp(argumants.strings[0], "add_car") == 0)
+		{
+			if(argumants.size != 4)
+			{
+				write(client, "USE: add_car [car id] [manufacturing year] [model]", 50);
+			}
+			else
+			{
+				if(!onlyLettersAndNumbers(argumants.strings[1]) || !onlyNumbers(argumants.strings[2]) || !onlyLettersAndNumbers(argumants.strings[3]))
+				{
+					write(client, "invalid input", 13);
+				}
+				else
+				{
+					// query: check if the car_id is existing
+					query = appendStrings(3, "SELECT COUNT(car_id) FROM car WHERE car_id = '", argumants.strings[1], "';");
+					result = queryAndResponse(1, con, query);
+					free(query);
+					if(result == NULL)
+					{
+						write(client, "error with query or get result", 30);
+						return;
+					}
+					row = mysql_fetch_row(result);
+					if(strcmp(row[0], "0") != 0)
+					{
+						write(client, "car id allready exist", 21);
+						mysql_free_result(result);
+					}
+					else
+					{
+						mysql_free_result(result);
+
+						// input validation
+
+						// query: add car to db
+						query = appendStrings(7,"INSERT INTO car (car_id, manufacturing_year, model) VALUES( \
+												'",argumants.strings[1],"',\
+												",argumants.strings[2],",\
+												'",argumants.strings[3],"');"); 
+						queryAndResponse(0, con, query);
+						free(query);
+
+						write(client, "ok", 2);
+					}
+				}
+			}
+		}
+		else if(strcmp(argumants.strings[0], "combine") == 0)
+		{
+			if(argumants.size != 3)
+			{
+				write(client, "USE: combine [car id] [customer id]", 35);
+			}
+			else
+			{
+				if(!onlyLettersAndNumbers(argumants.strings[1]) || !onlyNumbers(argumants.strings[2]))	
+				{
+					write(client, "invalid input", 13);
+				}
+				else
+				{
+					// query: check if the car_id is existing
+					query = appendStrings(3, "SELECT COUNT(car_id) FROM car WHERE car_id = '", argumants.strings[1], "';");
+					result = queryAndResponse(1, con, query);
+					free(query);
+					if(result == NULL)
+					{
+						write(client, "error with query or get result", 30);
+						return;
+					}
+					row = mysql_fetch_row(result);
+					if(strcmp(row[0], "0") == 0)
+					{
+						write(client, "car id is not exist", 19);
+						mysql_free_result(result);
+					}
+					else
+					{
+						mysql_free_result(result);
+
+						// query: check if the customer_id is existing
+						query = appendStrings(3, "SELECT COUNT(customer_id) FROM customer WHERE customer_id = '", argumants.strings[2], "';");
+						result = queryAndResponse(1, con, query);
+						free(query);
+						if(result == NULL)
+						{
+							write(client, "error with query or get result", 30);
+							return;
+						}
+						row = mysql_fetch_row(result);
+						if(strcmp(row[0], "0") == 0)
+						{
+							write(client, "customer id is not exist", 24);
+							mysql_free_result(result);
+						}
+						else
+						{
+							mysql_free_result(result);
+
+							// query: check if the customer_id and car_id is existing
+							query = appendStrings(5, "SELECT COUNT(customer_car_id) FROM customer_car WHERE car_id ='",argumants.strings[1],"' AND customer_id = '", argumants.strings[2], "';");
+							result = queryAndResponse(1, con, query);
+							free(query);
+							if(result == NULL)
+							{
+								write(client, "error with query or get result", 30);
+								return;
+							}
+							row = mysql_fetch_row(result);
+							if(strcmp(row[0], "0") != 0)
+							{
+								write(client, "customer and car allready combines", 34);
+								mysql_free_result(result);
+							}
+							else
+							{
+								mysql_free_result(result);
+
+							// query: add customer_car to db
+								query = appendStrings(5,"INSERT INTO customer_car (car_id, customer_id) VALUES( \
+														'",argumants.strings[1],"',\
+														'",argumants.strings[2],"');"); 
+								queryAndResponse(0, con, query);
+								free(query);
+
+								write(client, "ok", 2);
+							}
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			write(client, "must send add_customer/add_car/combine command", 46);
+		}
+		freeStrings(argumants);
+	}
+}
+
 void* handleClient(void* args)
 {
 	char buf[1000];
@@ -265,20 +517,22 @@ void* handleClient(void* args)
 		{
 			handleAlgorithm(con, info->connect_sock, argumants.strings[1], argumants.strings[2]);
 		}
+		else if(strcmp(argumants.strings[0], "manager") == 0 && argumants.size == 3)
+		{
+			handleManager(con, info->connect_sock, argumants.strings[1], argumants.strings[2]);
+		}
 	}
 	
 	puts("info->connect_sock");
 	write(info->connect_sock, "bye", 3);
-
 	close(info->connect_sock);
+
 	mysql_close(con);
 	freeStrings(argumants);
 
 	addLast(info->available, info->place);
 	return NULL;
 }
-
-
 
 MYSQL_RES * queryAndResponse(int isResult, MYSQL *con, char* query)
 {
@@ -293,7 +547,6 @@ MYSQL_RES * queryAndResponse(int isResult, MYSQL *con, char* query)
 		result =  mysql_store_result(con);
 		if(result == NULL)
 		{
-			puts(mysql_error(con));
 			return NULL;
 		}
 	}

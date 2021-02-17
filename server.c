@@ -109,5 +109,5 @@ void closeServer(int sock)
 {
 	stop = 1;
 	shutdown(sock, SHUT_RDWR);
-	//close(sock);
+	close(sock);
 }

@@ -1,8 +1,8 @@
 #include "client.h"
 
 int main(int argc, char** argv){
-	char bufInput[100] = "";
-	char bufOutput[100] = "";
+	char bufInput[1000] = "";
+	char bufOutput[1000] = "";
 	int sock;
 	int n;
 
@@ -15,13 +15,13 @@ int main(int argc, char** argv){
 		write(sock, bufInput, strlen(bufInput));
 		if(strcmp(bufInput, "quit") == 0)
 		{
-			n = read(sock, bufOutput, 100);
+			n = read(sock, bufOutput, 1000);
 			bufOutput[n] = '\0';
 			puts(bufOutput);
 			puts("");
 			break;
 		}
-		n = read(sock, bufOutput, 100);
+		n = read(sock, bufOutput, 1000);
 		bufOutput[n] = '\0';
 		puts(bufOutput);
         puts("");
