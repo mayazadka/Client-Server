@@ -232,3 +232,79 @@ int stringToInt(char* string, int *number)
 
     return 1;
 }
+
+int onlyNumbers(char* string)
+{
+    int len = strlen(string);
+    int i = 0;
+
+    if(len == 0)
+        return 0;
+  
+  while(i<len)
+    {
+        if(string[i]<'0' || string[i]>'9')
+            return 0;
+
+        i++;
+    }
+   
+   return 1;
+}
+
+int onlyLetters(char* string)
+{
+    int len = strlen(string);
+    int i = 0;
+   
+    if(len == 0)
+        return 0;
+   
+    while(i<len)
+    {
+        if(!((string[i]>='a' && string[i]<='z') || (string[i]>='A' && string[i]<='Z')))
+            return 0;
+
+        i++;
+    }
+   
+    return 1;
+}
+
+int emailPattern(char* string)
+{
+    int len = strlen(string);
+    int i = 0;
+   
+    if(len == 0)
+        return 0;
+   
+   
+    while(i<len)
+    {
+        if(!((string[i]>='a' && string[i]<='z') || (string[i]>='A' && string[i]<='Z') || string[i]=='@' || string[i]=='.' || (string[i]>='0' && string[i]<='9')))
+            return 0;
+
+        i++;
+    }
+    return 1;
+}
+
+int onlyLettersAndNumbers(char* string)
+{
+    int len = strlen(string);
+    int i = 0;
+   
+    if(len == 0)
+        return 0;
+   
+    while(i<len)
+    {
+        if(!((string[i]>='a' && string[i]<='z') || (string[i]>='A' && string[i]<='Z') || (string[i]>='0' && string[i]<='9')))
+            return 0;
+
+        i++;
+    }
+   
+    return 1;
+}

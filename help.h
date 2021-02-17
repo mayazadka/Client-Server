@@ -22,3 +22,11 @@ char* appendStrings(int count, ...);
 int stringToFloat(char* string, float *number);
 
 int stringToInt(char* string, int *number);
+
+int onlyNumbers(char* string);
+
+int onlyLetters(char* string);
+
+int emailPattern(char* string);
+
+int onlyLettersAndNumbers(char* string);
