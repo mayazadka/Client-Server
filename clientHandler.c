@@ -145,8 +145,28 @@ void handleAlgorithm(MYSQL * con, int client, char* drive_id, char* password)
 	int n;
 	char buf[1000];
 
+
+	//get the salt and the hashed password
+	query = appendStrings(3, "SELECT salt,hashed_password FROM drive WHERE drive_id = '", drive_id, "';");
+	result = queryAndResponse(1, con, query);
+	free(query);
+	if(result == NULL)
+	{
+		write(client, "error with query or get result", 30);
+		return;
+	}
+	row = mysql_fetch_row(result);
+	if(strcmp(row[0], "0") == 0)
+	{
+		mysql_free_result(result);
+		return;
+	}
+	char* salt = row[0];
+	char* hashed_password = row[1];
+	mysql_free_result(result);
+
 	// check the password
-	if(strcmp(password, "qwerty") != 0)
+	if(strcmp(GenerateSaltedHash(password,salt),hashed_password) != 0)
 	{
 		return;
 	}
@@ -238,7 +258,7 @@ void handleAlgorithm(MYSQL * con, int client, char* drive_id, char* password)
 	}
 }
 
-void handleManager(MYSQL * con, int client, char* username, char* passwrod)
+void handleManager(MYSQL * con, int client, char* username, char* password)
 {
 	char* query;
 	MYSQL_RES *result;
@@ -253,7 +273,8 @@ void handleManager(MYSQL * con, int client, char* username, char* passwrod)
 	}
 
 	// query: check if the manager and password are correct
-	query = appendStrings(5, "SELECT COUNT(username) FROM manager WHERE username = '", username, "' AND password = '",passwrod,"';");
+	//get the salt and the hashed password
+	query = appendStrings(3, "SELECT salt,hashed_password FROM manager WHERE username = '", username, "';");
 	result = queryAndResponse(1, con, query);
 	free(query);
 	if(result == NULL)
@@ -267,8 +288,14 @@ void handleManager(MYSQL * con, int client, char* username, char* passwrod)
 		mysql_free_result(result);
 		return;
 	}
+	char* salt = row[0];
+	char* hashed_password = row[1];
 	mysql_free_result(result);
-
+	// check the password
+	if(strcmp(GenerateSaltedHash(password,salt),hashed_password) != 0)
+	{
+		return;
+	}
 	write(client, "ok", 2);
 
 	while(1)

@@ -4,6 +4,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include "help/help.h"
+#include "help/password.h"
 #include "list.h"
 #ifdef __linux__            // UNIX/Linux
 #include <netinet/in.h>
