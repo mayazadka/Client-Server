@@ -268,8 +268,8 @@ void* handleClient(void* args)
 	}
 	
 	write(info->connect_sock, "bye", 3);
-
 	close(info->connect_sock);
+
 	mysql_close(con);
 	freeStrings(argumants);
 
@@ -277,14 +277,11 @@ void* handleClient(void* args)
 	return NULL;
 }
 
-
-
 MYSQL_RES * queryAndResponse(int isResult, MYSQL *con, char* query)
 {
 	MYSQL_RES *result = NULL;
 	if(mysql_query(con, query))
 	{
-		puts(mysql_error(con));
 		return NULL;
 	}
 	if(isResult)
@@ -292,7 +289,6 @@ MYSQL_RES * queryAndResponse(int isResult, MYSQL *con, char* query)
 		result =  mysql_store_result(con);
 		if(result == NULL)
 		{
-			puts(mysql_error(con));
 			return NULL;
 		}
 	}
