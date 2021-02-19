@@ -19,7 +19,7 @@ int openServer(int port)
 	int sock;
 	pthread_t tid;
 	struct sockaddr_in server_name;
-	info_runServer* data;
+	Main_data* main_data;
 	
 	sock = socket(AF_INET,SOCK_STREAM,0);
 	if(sock < 0)
@@ -42,15 +42,15 @@ int openServer(int port)
 		clean_up(3, sock);
 	}
 
-	data = (info_runServer*)malloc(sizeof(info_runServer));
-	if(data == NULL)
+	main_data = (Main_data*)malloc(sizeof(Main_data));
+	if(main_data == NULL)
 	{
 		clean_up(4, sock);
 	}
-	data->sock = sock;
-	data->server_name = server_name;	
+	main_data->sock = sock;
+	main_data->server_name = server_name;	
 
-	pthread_create(&tid, NULL, runServer, data);
+	pthread_create(&tid, NULL, runServer, main_data);
 	return sock;
 }
 
@@ -61,44 +61,44 @@ int openServer(int port)
 void* runServer(void* args)
 {
 	pthread_t tid;
-	info_runServer* data = args;
-	socklen_t len = sizeof(data->server_name);
-	info_sock info;
+	Main_data* main_data = args;
+	socklen_t len = sizeof(main_data->server_name);
+	Specific_data specific_data;
 	int place;
 
-	data->available = initialNewList(MAX_CLIENTS);
+	main_data->available = initialNewList(MAX_CLIENTS);
 	stop = 0;
 	while(!stop)
 	{
-		if(data->connect_sock == NULL)
+		if(main_data->connect_sock == NULL)
 		{
-			clean_up(5, data->sock);
+			clean_up(5, main_data->sock);
 		}
-		if(takeFirst(data->available, &place) == 0)
+		if(takeFirst(main_data->available, &place) == 0)
 		{
 			continue;
 		}
-		data->connect_sock[place] = accept(data->sock, (struct sockaddr *)&data->server_name,&len);
-		if(data->connect_sock[place]<0)
+		main_data->connect_sock[place] = accept(main_data->sock, (struct sockaddr *)&main_data->server_name,&len);
+		if(main_data->connect_sock[place]<0)
 		{
 			break;
 		}
-		info.connect_sock = data->connect_sock[place];
-		info.available = data->available;
-		info.place = place;
-		pthread_create(&tid, NULL, handleClient, &info);
+		specific_data.connect_sock = main_data->connect_sock[place];
+		specific_data.available = main_data->available;
+		specific_data.place = place;
+		pthread_create(&tid, NULL, handleClient, &specific_data);
 	}
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
-		if(contains(data->available, i) != 1 && data->connect_sock[i] != -1)
+		if(contains(main_data->available, i) != 1 && main_data->connect_sock[i] != -1)
 		{
-			write(data->connect_sock[i], "bye", 3);
-			close(data->connect_sock[i]);
+			write(main_data->connect_sock[i], "bye", 3);
+			close(main_data->connect_sock[i]);
 		}
 	}
 
-	free(data);
+	free(main_data);
 	return NULL;
 }
 

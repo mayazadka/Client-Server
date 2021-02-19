@@ -11,8 +11,8 @@ int main(int argc, char** argv){
 	{
         puts("enter command:");
         printf("> ");
-        gets(bufInput);
-		write(sock, bufInput, strlen(bufInput));
+    	fgets(bufInput, 1000, stdin); 
+		write(sock, bufInput, strlen(bufInput) - 1);
 		if(strcmp(bufInput, "quit") == 0)
 		{
 			n = read(sock, bufOutput, 1000);

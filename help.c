@@ -1,12 +1,17 @@
 #include "help.h"
 
+// --------------------------------
+// convert string to positive float
+// --------------------------------
 int stringToPositiveFloat(char* string, float *number)
 {
     char c;
-    int i=0;
+    int i = 0;
     int len = strlen(string);
     *number = 0;
     int place = 10;
+    
+    // convert string before floating point to integer
     while(i < len || (c = string[i]) != '.')
     {
         if(c <'0' || c>'9')
@@ -26,6 +31,8 @@ int stringToPositiveFloat(char* string, float *number)
         return 1;
     }
     i++;
+
+    // convert string after floating point to float
     while(i < len)
     {
         c = string[i];
@@ -44,6 +51,9 @@ int stringToPositiveFloat(char* string, float *number)
     return 1;
 }
 
+// ----------------------
+// split string by spaces
+// ----------------------
 Strings split(char* str)
 {
     Strings stringList;
@@ -108,6 +118,9 @@ Strings split(char* str)
     return stringList;
 }
 
+// ------------------
+// free String struct
+// ------------------
 void freeStrings(Strings strings)
 {   
     int i;
@@ -117,6 +130,9 @@ void freeStrings(Strings strings)
     }
 }
 
+// ------------------
+// free String struct
+// ------------------
 char* appendStrings(int count, ...)
 {
     va_list list; 
@@ -150,6 +166,9 @@ char* appendStrings(int count, ...)
     return newStr;
 }
 
+// -----------------------
+// convert string to float
+// -----------------------
 int stringToFloat(char* string, float *number)
 {
     int len = strlen(string);
@@ -199,6 +218,9 @@ int stringToFloat(char* string, float *number)
     return 1;
 }
 
+// ---------------------
+// convert string to int
+// ---------------------
 int stringToInt(char* string, int *number)
 {
     int len = strlen(string);
@@ -233,6 +255,9 @@ int stringToInt(char* string, int *number)
     return 1;
 }
 
+// ------------------------------------
+// check if string includes only numbers
+// ------------------------------------
 int onlyNumbers(char* string)
 {
     int len = strlen(string);
@@ -252,6 +277,9 @@ int onlyNumbers(char* string)
    return 1;
 }
 
+// ------------------------------------
+// check if string includes only letters
+// ------------------------------------
 int onlyLetters(char* string)
 {
     int len = strlen(string);
@@ -271,6 +299,9 @@ int onlyLetters(char* string)
     return 1;
 }
 
+// ----------------------------------------------------------
+// check if string includes only letters, numbers, '.' and '@'
+// ----------------------------------------------------------
 int emailPattern(char* string)
 {
     int len = strlen(string);
@@ -290,6 +321,9 @@ int emailPattern(char* string)
     return 1;
 }
 
+// ----------------------------------------------
+// check if string includes only letters and numbers
+// ----------------------------------------------
 int onlyLettersAndNumbers(char* string)
 {
     int len = strlen(string);

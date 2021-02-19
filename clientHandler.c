@@ -1,12 +1,11 @@
 #include "clientHandler.h"
 
-// ----------------------------------------------------------------------------------------------------------------------
-// this method is responsibal for handeling with one client. (it is run throw the new socket that is opend for each client) 
-// ----------------------------------------------------------------------------------------------------------------------
-
-void handleOBDclient(MYSQL * con, int client, char* car_id, char* customer_id)
+// ----------------------
+// handling an OBD client
+// ----------------------
+void handleOBDclient(MYSQL * con, int client, char* car_id, char* customer_id, char* password)
 {
-	char* query;
+	char* query, *hash;
 	char *customer_car_id, *drive_id;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -14,10 +13,37 @@ void handleOBDclient(MYSQL * con, int client, char* car_id, char* customer_id)
 	int n;
 	char buf[1000];
 
-	if(!onlyLettersAndNumbers(car_id) || !onlyNumbers(customer_id))
+	// query: get the salt and the hashed password
+	query = appendStrings(3, "SELECT salt,hashed_password FROM car WHERE car_id = '", car_id, "';");
+	result = queryAndResponse(1, con, query);
+	free(query);
+	if(result == NULL)
+	{
+		write(client, "error with query or get result", 30);
+		return;
+	}
+	row = mysql_fetch_row(result);
+	if(row == NULL)
 	{
 		return;
 	}
+	char* salt = row[0];
+	char* hashed_password = row[1];
+	mysql_free_result(result);
+
+	// input validation
+	if(!emailPattern(password) || !onlyLettersAndNumbers(car_id) || !onlyNumbers(customer_id))
+	{
+		return;
+	}
+
+	// check the password
+	hash = GenerateSaltedHash(password,salt);
+	if(strcmp(hash,hashed_password) != 0)
+	{
+		return;
+	}
+	free(hash);
 
 	// query: check if the combination of car_id and customer_id is existing
 	query = appendStrings(5, "SELECT COUNT(car_id) FROM customer_car WHERE car_id = '", car_id, "' AND customer_id = '", customer_id, "';");
@@ -38,7 +64,7 @@ void handleOBDclient(MYSQL * con, int client, char* car_id, char* customer_id)
 
 	write(client, "ok", 2);
 	
-	// query: get the customer_car_if for the current user drive
+	// query: get the customer_car_id for the current user drive
 	query = appendStrings(5, "SELECT customer_car_id FROM customer_car WHERE car_id = '", car_id, "' AND customer_id = '", customer_id, "';");
 	result = queryAndResponse(1, con, query);
 	free(query);
@@ -107,8 +133,6 @@ void handleOBDclient(MYSQL * con, int client, char* car_id, char* customer_id)
 			}
 			else
 			{
-				//needs validation to charactristics
-
 				// query: insert the drive characteristics
 				query = appendStrings(15,
 				"INSERT INTO \
@@ -136,18 +160,20 @@ void handleOBDclient(MYSQL * con, int client, char* car_id, char* customer_id)
 	free(drive_id);
 }
 
-void handleAlgorithm(MYSQL * con, int client, char* drive_id, char* password)
+// ----------------------------
+// handling a statistic manager
+// ----------------------------
+void handleStatisticInformationManager(MYSQL * con, int client, char* drive_id, char* username, char* password)
 {
-	char* query;
+	char* query, *hash;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	Strings argumants;
 	int n;
 	char buf[1000];
 
-
-	//get the salt and the hashed password
-	query = appendStrings(3, "SELECT salt,hashed_password FROM drive WHERE drive_id = '", drive_id, "';");
+	// query: get the salt and the hashed password
+	query = appendStrings(3, "SELECT salt,hashed_password FROM statistic_information_manager WHERE username = '", username, "';");
 	result = queryAndResponse(1, con, query);
 	free(query);
 	if(result == NULL)
@@ -156,29 +182,30 @@ void handleAlgorithm(MYSQL * con, int client, char* drive_id, char* password)
 		return;
 	}
 	row = mysql_fetch_row(result);
-	if(strcmp(row[0], "0") == 0)
+	if(row == NULL)
 	{
-		mysql_free_result(result);
 		return;
 	}
 	char* salt = row[0];
 	char* hashed_password = row[1];
 	mysql_free_result(result);
 
-	// check the password
-	if(strcmp(GenerateSaltedHash(password,salt),hashed_password) != 0)
+	// input validation
+	if(!onlyNumbers(drive_id) || !emailPattern(password))
 	{
 		return;
 	}
+
+	// check the password
+	hash = GenerateSaltedHash(password,salt);
+	if(strcmp(hash,hashed_password) != 0)
+	{
+		return;
+	}
+	free(hash);
 
 	write(client, "ok", 2);
 	
-	
-	if(!onlyNumbers(drive_id))
-	{
-		return;
-	}
-
 	// query: check if the drive_id is existing
 	query = appendStrings(3, "SELECT COUNT(drive_id) FROM drive WHERE drive_id = '", drive_id, "';");
 	result = queryAndResponse(1, con, query);
@@ -226,6 +253,7 @@ void handleAlgorithm(MYSQL * con, int client, char* drive_id, char* password)
 					}
 					else
 					{
+						// query: get statistic paramater about a drive
 						query = appendStrings(7,
 						"SELECT ",argumants.strings[2],"(",argumants.strings[1],") \
 						FROM drive_characteristics \
@@ -258,23 +286,20 @@ void handleAlgorithm(MYSQL * con, int client, char* drive_id, char* password)
 	}
 }
 
-void handleManager(MYSQL * con, int client, char* username, char* password)
+// ------------------------
+// handling a worker client
+// ------------------------
+void handleWorker(MYSQL * con, int client, char* worker_id, char* password)
 {
-	char* query;
+	char* query, *hash;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	Strings argumants;
 	int n;
 	char buf[1000];
-	
-	if(!onlyLettersAndNumbers(username))
-	{
-		return;
-	}
 
-	// query: check if the manager and password are correct
-	//get the salt and the hashed password
-	query = appendStrings(3, "SELECT salt,hashed_password FROM manager WHERE username = '", username, "';");
+	// query: get the salt and the hashed password
+	query = appendStrings(3, "SELECT salt,hashed_password,permitions FROM worker WHERE worker_id = '", worker_id, "';");
 	result = queryAndResponse(1, con, query);
 	free(query);
 	if(result == NULL)
@@ -283,19 +308,28 @@ void handleManager(MYSQL * con, int client, char* username, char* password)
 		return;
 	}
 	row = mysql_fetch_row(result);
-	if(strcmp(row[0], "0") == 0)
+	if(row == NULL)
 	{
-		mysql_free_result(result);
 		return;
 	}
 	char* salt = row[0];
 	char* hashed_password = row[1];
 	mysql_free_result(result);
-	// check the password
-	if(strcmp(GenerateSaltedHash(password,salt),hashed_password) != 0)
+
+	// input validation
+	if(!onlyNumbers(worker_id) || !emailPattern(password))
 	{
 		return;
 	}
+
+	// check the password
+	hash = GenerateSaltedHash(password,salt);
+	if(strcmp(hash,hashed_password) != 0)
+	{
+		return;
+	}
+	free(hash);
+
 	write(client, "ok", 2);
 
 	while(1)
@@ -369,13 +403,13 @@ void handleManager(MYSQL * con, int client, char* username, char* password)
 		}
 		else if(strcmp(argumants.strings[0], "add_car") == 0)
 		{
-			if(argumants.size != 4)
+			if(argumants.size != 5)
 			{
-				write(client, "USE: add_car [car id] [manufacturing year] [model]", 50);
+				write(client, "USE: add_car [car id] [manufacturing year] [model] [password]", 50);
 			}
 			else
 			{
-				if(!onlyLettersAndNumbers(argumants.strings[1]) || !onlyNumbers(argumants.strings[2]) || !onlyLettersAndNumbers(argumants.strings[3]))
+				if(!onlyLettersAndNumbers(argumants.strings[1]) || !onlyNumbers(argumants.strings[2]) || !onlyLettersAndNumbers(argumants.strings[3]) || !emailPattern(argumants.strings[4]))
 				{
 					write(client, "invalid input", 13);
 				}
@@ -399,18 +433,28 @@ void handleManager(MYSQL * con, int client, char* username, char* password)
 					else
 					{
 						mysql_free_result(result);
-
-						// input validation
-
-						// query: add car to db
-						query = appendStrings(7,"INSERT INTO car (car_id, manufacturing_year, model) VALUES( \
-												'",argumants.strings[1],"',\
-												",argumants.strings[2],",\
-												'",argumants.strings[3],"');"); 
-						queryAndResponse(0, con, query);
-						free(query);
-
-						write(client, "ok", 2);
+						char* salt = getSalt();
+						char* hashed_password = GenerateSaltedHash(argumants.strings[4], salt);
+						if(salt ==NULL || hashed_password == NULL)
+						{
+							write(client, "error allocation", 16);
+						}
+						else
+						{
+							// query: add car to db
+							query = appendStrings(11,"INSERT INTO car (car_id, manufacturing_year, model, hashed_password, salt) VALUES( \
+													'",argumants.strings[1],"',\
+													",argumants.strings[2],",\
+													'",argumants.strings[3],"',\
+													'",hashed_password,"',\
+													'",salt,"');"); 
+							queryAndResponse(0, con, query);
+							free(query);
+							free(salt);
+							free(hashed_password);
+							write(client, "ok", 2);
+						}
+						
 					}
 				}
 			}
@@ -508,59 +552,65 @@ void handleManager(MYSQL * con, int client, char* username, char* password)
 	}
 }
 
+// ----------------------------------------------------------------------------------------------------------------------
+// main function for handling any client
+// ----------------------------------------------------------------------------------------------------------------------
 void* handleClient(void* args)
 {
 	char buf[1000];
-	info_sockh* info = args;
+	Specific_data* specific_data = args;
 	int n;
 	Strings argumants;
 	MYSQL *con;
 
-	con = mysql_init(NULL);
+	con = mysql_init(NULL); // initialize connection to mysql
 	if (con == NULL)
 	{
-		write(info->connect_sock, "error initialize connection to db", 33);
-		close(info->connect_sock);
+		write(specific_data->connect_sock, "error initialize connection to db", 33);
+		close(specific_data->connect_sock);
 		return NULL;
 	}
-	if(mysql_real_connect(con, "127.0.0.1", "root", "OMEome0707",  "ottomate", 0, NULL, 0) == NULL)
+	if(mysql_real_connect(con, MYSQLIP, MYSQLUSER, MYSQLPASSWORD, MYSQLDB, 0, NULL, 0) == NULL) // connect to db
 	{
-		write(info->connect_sock, "error connect to db", 19);
-		close(info->connect_sock);
+		write(specific_data->connect_sock, "error connect to db", 19);
+		close(specific_data->connect_sock);
 		mysql_close(con);
 		return NULL;
 	}
 
-	n = read(info->connect_sock, buf, 1000);
+	n = read(specific_data->connect_sock, buf, 1000); //read first command from client
 	buf[n] = '\0';
 	argumants = split(buf);
 	if(argumants.error != 1 && argumants.size != 0)
 	{
-		if(strcmp(argumants.strings[0], "connect") == 0 && argumants.size == 3)
+		if(strcmp(argumants.strings[0], "connect") == 0 && argumants.size == 4) // OBDclient
 		{
-			handleOBDclient(con, info->connect_sock, argumants.strings[1], argumants.strings[2]);
+			handleOBDclient(con, specific_data->connect_sock, argumants.strings[1], argumants.strings[2], argumants.strings[3]);
 		}
-		else if (strcmp(argumants.strings[0], "algo") == 0 && argumants.size == 3)
+		else if (strcmp(argumants.strings[0], "statistic") == 0 && argumants.size == 4) // Statistic Manager
 		{
-			handleAlgorithm(con, info->connect_sock, argumants.strings[1], argumants.strings[2]);
+			handleStatisticInformationManager(con, specific_data->connect_sock, argumants.strings[1], argumants.strings[2], argumants.strings[3]);
 		}
-		else if(strcmp(argumants.strings[0], "manager") == 0 && argumants.size == 3)
+		else if(strcmp(argumants.strings[0], "worker") == 0 && argumants.size == 3) // worker
 		{
-			handleManager(con, info->connect_sock, argumants.strings[1], argumants.strings[2]);
+			handleWorker(con, specific_data->connect_sock, argumants.strings[1], argumants.strings[2]);
 		}
 	}
 	
-	puts("info->connect_sock");
-	write(info->connect_sock, "bye", 3);
-	close(info->connect_sock);
+	// end connection with client
+	write(specific_data->connect_sock, "bye", 3);
+	close(specific_data->connect_sock);
 
 	mysql_close(con);
 	freeStrings(argumants);
 
-	addLast(info->available, info->place);
+	addLast(specific_data->available, specific_data->place);
 	return NULL;
 }
 
+// ----------------------------------------------------------------------------------------------------------------------
+// send the query to the db and returns the response
+// ----------------------------------------------------------------------------------------------------------------------
 MYSQL_RES * queryAndResponse(int isResult, MYSQL *con, char* query)
 {
 	MYSQL_RES *result = NULL;

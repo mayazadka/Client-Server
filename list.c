@@ -1,5 +1,8 @@
 #include "list.h"
 
+// ---------------
+// create new node
+// ---------------
 Node* newNode(int value, Node* next)
 {
     Node* node = (Node*)malloc(sizeof(Node));
@@ -11,6 +14,9 @@ Node* newNode(int value, Node* next)
     return node;
 }
 
+// --------------------
+// create new empty list
+// --------------------
 List* newList()
 {
     List* list = (List*)malloc(sizeof(List));
@@ -23,6 +29,9 @@ List* newList()
     return list;
 }
 
+// -------------------------------------------
+// create new empty list with values 0-(size-1)
+// -------------------------------------------
 List* initialNewList(int size)
 {
     List* list = newList();
@@ -36,6 +45,9 @@ List* initialNewList(int size)
     return list;
 }
 
+// ------------------------
+// add value to end of list
+// ------------------------
 void addLast(List* list , int value)
 {
     if(list->size == 0)
@@ -53,6 +65,9 @@ void addLast(List* list , int value)
     list->size++;
 }
 
+// ------------------------------------
+// get value from the start of the list
+// ------------------------------------
 int takeFirst(List* list , int* value)
 {
     if(list->size == 0) {return 0;}
@@ -72,6 +87,9 @@ int takeFirst(List* list , int* value)
     return 1;
 }
 
+// ------------------------------------
+// check if list contains the value
+// ------------------------------------
 int contains(List* list,int value)
 {
     Node* node = list->head;
@@ -83,12 +101,18 @@ int contains(List* list,int value)
     return 0;
 }
 
+// --------------------
+// free the List struct
+// --------------------
 void freeList(List* list)
 {
     freeNodes(list->head);
     free(list);
 }
 
+// --------------------
+// free the Node struct
+// --------------------
 void freeNodes(Node* node)
 {
     if(node->next == NULL)

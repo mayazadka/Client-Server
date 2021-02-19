@@ -1,7 +1,7 @@
 #include "server.h"
 
 int main() {
-    char line[81] = "";
+    char line[1000] = "";
     int sock;
 
     sock = openServer(PORTS);
