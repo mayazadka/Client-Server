@@ -14,7 +14,7 @@
 #include <arpa/inet.h>
 #endif
 #define MAX_CLIENTS 5
-#define PORTS 2021
+#define PORTS 7777
 #define IP "127.0.0.1"
 
 #include "clientHandler.h"

@@ -12,8 +12,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #endif
-#define PORTC 2021
-#define IP "127.0.0.1"
+#define PORTC 7777
+#define IP "84.94.84.90"
 
 void clean_up(int cond, int sock);
 int openClient(char* ip, int port);
