@@ -405,7 +405,7 @@ void handleWorker(MYSQL * con, int client, char* worker_id, char* password)
 		{
 			if(argumants.size != 5)
 			{
-				write(client, "USE: add_car [car id] [manufacturing year] [model] [password]", 50);
+				write(client, "USE: add_car [car id] [manufacturing year] [model] [password]", 61);
 			}
 			else
 			{
