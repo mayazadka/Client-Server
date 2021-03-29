@@ -3,7 +3,7 @@
 // ----------------------
 // handling an OBD client
 // ----------------------
-void handleOBDclient(MYSQL * con, int client, char* car_id, char* customer_id, char* password)
+int handleOBDclient(MYSQL * con, int client, char* car_id, char* customer_id, char* password)
 {
 	char* query, *hash;
 	char *customer_car_id, *drive_id;
@@ -20,12 +20,12 @@ void handleOBDclient(MYSQL * con, int client, char* car_id, char* customer_id, c
 	if(result == NULL)
 	{
 		write(client, "error with query or get result", 30);
-		return;
+		return QUERY_RESULT_ERROR;
 	}
 	row = mysql_fetch_row(result);
 	if(row == NULL)
 	{
-		return;
+		return GET_ROW_ERROR;
 	}
 	char* salt = row[0];
 	char* hashed_password = row[1];
@@ -34,14 +34,14 @@ void handleOBDclient(MYSQL * con, int client, char* car_id, char* customer_id, c
 	// input validation
 	if(!emailPattern(password) || !onlyLettersAndNumbers(car_id) || !onlyNumbers(customer_id))
 	{
-		return;
+		return INPUT_VALIDATION_ERROR;
 	}
 
 	// check the password
 	hash = GenerateSaltedHash(password,salt);
 	if(strcmp(hash,hashed_password) != 0)
 	{
-		return;
+		return WRONG_PASSWORD_ERROR;
 	}
 	free(hash);
 
@@ -52,13 +52,13 @@ void handleOBDclient(MYSQL * con, int client, char* car_id, char* customer_id, c
 	if(result == NULL)
 	{
 		write(client, "error with query or get result", 30);
-		return;
+		return QUERY_RESULT_ERROR;
 	}
 	row = mysql_fetch_row(result);
 	if(strcmp(row[0], "0") == 0)
 	{
 		mysql_free_result(result);
-		return;
+		return GET_ROW_ERROR;
 	}
 	mysql_free_result(result);
 
@@ -71,7 +71,7 @@ void handleOBDclient(MYSQL * con, int client, char* car_id, char* customer_id, c
 	if(result == NULL)
 	{
 		write(client, "error with query or get result", 30);
-		return;
+		return QUERY_RESULT_ERROR;
 	}
 	row = mysql_fetch_row(result);
 	customer_car_id = (char*)malloc(sizeof(char) * (strlen(row[0]) + 1)); // add 1 for '\0'
@@ -79,7 +79,7 @@ void handleOBDclient(MYSQL * con, int client, char* car_id, char* customer_id, c
 	{
 		write(client, "error with allocation", 21); 
 		mysql_free_result(result);
-		return;
+		return ALLOCATION_ERROR;
 	}
 	strcpy(customer_car_id ,row[0]);
 	mysql_free_result(result);
@@ -97,7 +97,7 @@ void handleOBDclient(MYSQL * con, int client, char* car_id, char* customer_id, c
 	{
 		write(client, "error with query or get result", 30);
 		free(customer_car_id);
-		return;
+		return QUERY_RESULT_ERROR;
 	}
 	row = mysql_fetch_row(result);
 	drive_id = (char*)malloc(sizeof(char) * (strlen(row[0]) +1));
@@ -106,7 +106,7 @@ void handleOBDclient(MYSQL * con, int client, char* car_id, char* customer_id, c
 		write(client, "error with allocation", 21); 
 		free(customer_car_id);
 		mysql_free_result(result);
-		return;
+		return ALLOCATION_ERROR;
 	}
 	strcpy(drive_id, row[0]);
 	mysql_free_result(result);
@@ -158,6 +158,7 @@ void handleOBDclient(MYSQL * con, int client, char* car_id, char* customer_id, c
 
 	free(customer_car_id);
 	free(drive_id);
+	return OK;
 }
 
 // ----------------------------
@@ -179,12 +180,12 @@ void handleStatisticInformationManager(MYSQL * con, int client, char* drive_id, 
 	if(result == NULL)
 	{
 		write(client, "error with query or get result", 30);
-		return;
+		return QUERY_RESULT_ERROR;
 	}
 	row = mysql_fetch_row(result);
 	if(row == NULL)
 	{
-		return;
+		return GET_ROW_ERROR;
 	}
 	char* salt = row[0];
 	char* hashed_password = row[1];
@@ -193,14 +194,14 @@ void handleStatisticInformationManager(MYSQL * con, int client, char* drive_id, 
 	// input validation
 	if(!onlyNumbers(drive_id) || !emailPattern(password))
 	{
-		return;
+		return INPUT_VALIDATION_ERROR;
 	}
 
 	// check the password
 	hash = GenerateSaltedHash(password,salt);
 	if(strcmp(hash,hashed_password) != 0)
 	{
-		return;
+		return WRONG_PASSWORD_ERROR;
 	}
 	free(hash);
 
@@ -213,13 +214,13 @@ void handleStatisticInformationManager(MYSQL * con, int client, char* drive_id, 
 	if(result == NULL)
 	{
 		write(client, "error with query or get result", 30);
-		return;
+		return QUERY_RESULT_ERROR;
 	}
 	row = mysql_fetch_row(result);
 	if(strcmp(row[0], "0") == 0)
 	{
 		mysql_free_result(result);
-		return;
+		return GET_ROW_ERROR;
 	}
 	mysql_free_result(result);
 
@@ -262,7 +263,8 @@ void handleStatisticInformationManager(MYSQL * con, int client, char* drive_id, 
 						free(query);
 						if(result == NULL)
 						{
-							write(client, "error with query or get result", 30);	
+							write(client, "error with query or get result", 30);
+							return QUERY_RESULT_ERROR;	
 						}
 						else
 						{
@@ -305,12 +307,12 @@ void handleWorker(MYSQL * con, int client, char* worker_id, char* password)
 	if(result == NULL)
 	{
 		write(client, "error with query or get result", 30);
-		return;
+		return QUERY_RESULT_ERROR;
 	}
 	row = mysql_fetch_row(result);
 	if(row == NULL)
 	{
-		return;
+		return GET_ROW_ERROR;
 	}
 	char* salt = row[0];
 	char* hashed_password = row[1];
@@ -319,14 +321,14 @@ void handleWorker(MYSQL * con, int client, char* worker_id, char* password)
 	// input validation
 	if(!onlyNumbers(worker_id) || !emailPattern(password))
 	{
-		return;
+		return INPUT_VALIDATION_ERROR;
 	}
 
 	// check the password
 	hash = GenerateSaltedHash(password,salt);
 	if(strcmp(hash,hashed_password) != 0)
 	{
-		return;
+		return WRONG_PASSWORD_ERROR;
 	}
 	free(hash);
 
@@ -369,7 +371,7 @@ void handleWorker(MYSQL * con, int client, char* worker_id, char* password)
 					if(result == NULL)
 					{
 						write(client, "error with query or get result", 30);
-						return;
+						return QUERY_RESULT_ERROR;
 					}
 					row = mysql_fetch_row(result);
 					if(strcmp(row[0], "0") != 0)
@@ -422,7 +424,7 @@ void handleWorker(MYSQL * con, int client, char* worker_id, char* password)
 					if(result == NULL)
 					{
 						write(client, "error with query or get result", 30);
-						return;
+						return QUERY_RESULT_ERROR;
 					}
 					row = mysql_fetch_row(result);
 					if(strcmp(row[0], "0") != 0)
@@ -480,7 +482,7 @@ void handleWorker(MYSQL * con, int client, char* worker_id, char* password)
 					if(result == NULL)
 					{
 						write(client, "error with query or get result", 30);
-						return;
+						return QUERY_RESULT_ERROR;
 					}
 					row = mysql_fetch_row(result);
 					if(strcmp(row[0], "0") == 0)
@@ -499,7 +501,7 @@ void handleWorker(MYSQL * con, int client, char* worker_id, char* password)
 						if(result == NULL)
 						{
 							write(client, "error with query or get result", 30);
-							return;
+							return QUERY_RESULT_ERROR;
 						}
 						row = mysql_fetch_row(result);
 						if(strcmp(row[0], "0") == 0)
@@ -518,7 +520,7 @@ void handleWorker(MYSQL * con, int client, char* worker_id, char* password)
 							if(result == NULL)
 							{
 								write(client, "error with query or get result", 30);
-								return;
+								return QUERY_RESULT_ERROR;
 							}
 							row = mysql_fetch_row(result);
 							if(strcmp(row[0], "0") != 0)
@@ -555,7 +557,7 @@ void handleWorker(MYSQL * con, int client, char* worker_id, char* password)
 // ----------------------------------------------------------------------------------------------------------------------
 // main function for handling any client
 // ----------------------------------------------------------------------------------------------------------------------
-void* handleClient(void* args)
+int handleClient(void* args)
 {
 	char buf[1000];
 	Specific_data* specific_data = args;
@@ -568,14 +570,14 @@ void* handleClient(void* args)
 	{
 		write(specific_data->connect_sock, "error initialize connection to db", 33);
 		close(specific_data->connect_sock);
-		return NULL;
+		return INIT_DB_ERROR;
 	}
 	if(mysql_real_connect(con, MYSQLIP, MYSQLUSER, MYSQLPASSWORD, MYSQLDB, 0, NULL, 0) == NULL) // connect to db
 	{
 		write(specific_data->connect_sock, "error connect to db", 19);
 		close(specific_data->connect_sock);
 		mysql_close(con);
-		return NULL;
+		return CONNECT_DB_ERROR;
 	}
 
 	n = read(specific_data->connect_sock, buf, 1000); //read first command from client
@@ -605,27 +607,26 @@ void* handleClient(void* args)
 	freeStrings(argumants);
 
 	addLast(specific_data->available, specific_data->place);
-	return NULL;
+	return OK;
 }
 
 // ----------------------------------------------------------------------------------------------------------------------
 // send the query to the db and returns the response
 // ----------------------------------------------------------------------------------------------------------------------
-MYSQL_RES * queryAndResponse(int isResult, MYSQL *con, char* query)
+int queryAndResponse(int isResult, MYSQL *con, char* query, MYSQL_RES* result)
 {
-	MYSQL_RES *result = NULL;
 	if(mysql_query(con, query))
 	{
 		puts(mysql_error(con));
-		return NULL;
+		return SEND_QUERY_ERROR;
 	}
 	if(isResult)
 	{
 		result =  mysql_store_result(con);
 		if(result == NULL)
 		{
-			return NULL;
+			return QUERY_RESULT_ERROR;
 		}
 	}
-	return result;
+	return OK;
 }

@@ -6,6 +6,8 @@
 #include "help.h"
 #include "password.h"
 #include "list.h"
+#include "Error.h"
+
 #ifdef __linux__            // UNIX/Linux
 #include <netinet/in.h>
 #include <mysql.h>
@@ -29,5 +31,7 @@ struct specific_data{
 	int place;
 }typedef Specific_data;
 
-void* handleClient(void* args);
-MYSQL_RES * queryAndResponse(int isResult, MYSQL *con, char* query);
+int handleOBDclient(MYSQL * con, int client, char* car_id, char* customer_id, char* password);
+void handleStatisticInformationManager(MYSQL * con, int client, char* drive_id, char* username, char* password);
+void handleWorker(MYSQL * con, int client, char* worker_id, char* password);
+int handleClient(void* args);

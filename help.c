@@ -1,4 +1,5 @@
 #include "help.h"
+#include "Error.h"
 
 // --------------------------------
 // convert string to positive float
