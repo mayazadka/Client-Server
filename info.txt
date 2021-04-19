@@ -1,0 +1,5 @@
+to compile server:
+gcc -Wall main_server.c clientHandler.c help.c list.c password.c server.c sha256.c $(mysql_config --libs) -o server.exe $(mysql_config --cflags) -pthread
+
+to run server:
+./server.exe

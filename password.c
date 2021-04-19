@@ -1,8 +1,6 @@
 #include "password.h"
 
-// ---------------------------------------
 // generate a numeric salted hash password
-// ---------------------------------------
 char* GenerateSaltedHash(char* plainText, char* salt)
 {
     BYTE buf[SHA256_BLOCK_SIZE];
@@ -51,9 +49,7 @@ char* GenerateSaltedHash(char* plainText, char* salt)
     return hash;
 }
 
-// --------------------
 // generate random salt
-// --------------------
 char* getSalt()
 {
     FILE *f;

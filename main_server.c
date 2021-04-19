@@ -1,12 +1,16 @@
 #include "server.h"
 
-int main() {
-    char line[1000] = "";
+int main(void) {
+    char line[MAX_MESSAGE_SIZE] = "";
     int sock;
+    int error;
 
-    sock = openServer(PORTS);
+    if((error = openServer(PORT, &sock))!=SUCCESS){exit(error);}
+
     puts("enter something to close the server:");
     scanf("%s", line);
+
     closeServer(sock);
-    exit(0);
+
+    return SUCCESS;
 }

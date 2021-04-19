@@ -2,62 +2,48 @@
 
 int stop = 0;
 
-// --------------------------------------------
-// closes and relases the soceket that was open
-// --------------------------------------------
-void clean_up(int cond, int sock)
-{
-	close(sock);
-	exit(cond);
-}
-
-// ---------------------------------------------------------------------------------
 // opening a new server and running it in a seperted thread (using runServer method)
-// ---------------------------------------------------------------------------------
-int openServer(int port)
+int openServer(int port, int* sock)
 {
-	int sock;
 	pthread_t tid;
 	struct sockaddr_in server_name;
 	Main_data* main_data;
 	
-	sock = socket(AF_INET,SOCK_STREAM,0);
-	if(sock < 0)
-	{
-		exit(1);
-	}
+	*sock = socket(AF_INET,SOCK_STREAM,0);
+	if(*sock < 0){return CREATE_SOCKET_ERROR;}
 
 	bzero(&server_name,sizeof(server_name));
 	server_name.sin_family = AF_INET;
 	server_name.sin_addr.s_addr = htonl(INADDR_ANY);
 	server_name.sin_port = htons(port);
 	
-	if(bind(sock, (struct sockaddr *)&server_name, sizeof(server_name)) < 0)
+	if(bind(*sock, (struct sockaddr *)&server_name, sizeof(server_name)) < 0)
 	{
-		clean_up(2,sock);
+		close(*sock);
+		return BIND_SOCKET_ERROR;
 	}
 	
-	if(listen(sock,MAX_CLIENTS) < 0)
+	if(listen(*sock,MAX_CLIENTS) < 0)
 	{
-		clean_up(3, sock);
+		close(*sock);
+		return LISTEN_SOCKET_ERROR;
 	}
 
 	main_data = (Main_data*)malloc(sizeof(Main_data));
 	if(main_data == NULL)
 	{
-		clean_up(4, sock);
+		close(*sock);
+		return ALLOCATION_ERROR;
 	}
-	main_data->sock = sock;
+	main_data->sock = *sock;
 	main_data->server_name = server_name;	
 
 	pthread_create(&tid, NULL, runServer, main_data);
-	return sock;
+	
+	return SUCCESS;
 }
 
-// -------------------------------------------------------------------------------
-// listening until the server is told to stop, any time we accept a new client we handle him
-// in a new thread (via clientHandel method)
-// -------------------------------------------------------------------------------
+// listening until the server is told to stop, any time we accept a new client we handle him in a new thread (via clientHandel method)
 void* runServer(void* args)
 {
 	pthread_t tid;
@@ -72,7 +58,8 @@ void* runServer(void* args)
 	{
 		if(main_data->connect_sock == NULL)
 		{
-			clean_up(5, main_data->sock);
+			close(main_data->sock);
+			// return error?
 		}
 		if(takeFirst(main_data->available, &place) == 0)
 		{
@@ -102,9 +89,7 @@ void* runServer(void* args)
 	return NULL;
 }
 
-// ------------------
 // closing the server
-// ------------------
 void closeServer(int sock)
 {
 	stop = 1;

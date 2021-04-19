@@ -1,19 +1,12 @@
 #include "client.h"
-#include "log.h"
 
 int main(int argc, char** argv){
 	char bufInput[1000] = "";
 	char bufOutput[1000] = "";
 	int sock;
 	int n;
-	int error;
-	creatLog();
-	error = openClient(IP, PORTC, &sock);
-	if(error > 0)
-	{
-		writeToLog("error : " + error);
-		return error;
-	}
+	
+	sock = openClient(IP, PORTC);
 	while(1)
 	{
         puts("enter command:");

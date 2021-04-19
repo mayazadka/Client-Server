@@ -1,12 +1,13 @@
+//includes
 #include <stdio.h>
 #include <stdlib.h>
 
+//structures
 typedef struct Node
 {
     int value;
     struct Node *next;
 }Node;
-
 typedef struct List
 {
     int size;
@@ -14,6 +15,7 @@ typedef struct List
     Node* tail; 
 }List;
 
+//functions
 Node* newNode(int value, Node* next);
 List* newList();
 List* initialNewList(int size);
